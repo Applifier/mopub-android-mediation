@@ -12,6 +12,8 @@ import com.mopub.common.Preconditions;
 import com.mopub.common.logging.MoPubLog;
 import com.mopub.mobileads.unityads.BuildConfig;
 import com.unity3d.ads.UnityAds;
+import com.unity3d.ads.headerbidding.IHeaderBiddingListener;
+import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 
 import java.util.Map;
 
@@ -25,6 +27,9 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     private static final String MOPUB_NETWORK_NAME = BuildConfig.NETWORK_NAME;
     private static final String ADAPTER_NAME = UnityAdsAdapterConfiguration.class.getSimpleName();
 
+    private boolean requestingToken = false;
+    private String token = null;
+
     @NonNull
     @Override
     public String getAdapterVersion() {
@@ -34,7 +39,19 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     @Nullable
     @Override
     public String getBiddingToken(@NonNull Context context) {
-        return null;
+        if (!requestingToken) {
+            requestingToken = true;
+            UnityAds.addListener(new HeaderBiddingListener() {
+                @Override
+                public void onUnityAdsTokenReady(String s) {
+                    UnityAds.removeListener(this);
+                    UnityAdsAdapterConfiguration.this.requestingToken = false;
+                    UnityAdsAdapterConfiguration.this.token = s;
+                }
+            });
+            UnityAds.requestToken();
+        }
+        return token;
     }
 
     @NonNull
@@ -92,5 +109,53 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
         MoPubLog.LogLevel logLevel = MoPubLog.getLogLevel();
         boolean debugModeEnabled = logLevel == MoPubLog.LogLevel.DEBUG;
         UnityAds.setDebugMode(debugModeEnabled);
+    }
+
+    public static class HeaderBiddingListener implements IHeaderBiddingListener, IUnityAdsExtendedListener {
+
+        @Override
+        public void onUnityAdsReady(String s) {
+
+        }
+
+        @Override
+        public void onUnityAdsStart(String s) {
+
+        }
+
+        @Override
+        public void onUnityAdsFinish(String s, UnityAds.FinishState finishState) {
+
+        }
+
+        @Override
+        public void onUnityAdsError(UnityAds.UnityAdsError unityAdsError, String s) {
+
+        }
+
+        @Override
+        public void onUnityAdsTokenReady(String s) {
+
+        }
+
+        @Override
+        public void onUnityAdsBidLoaded(String uuid) {
+
+        }
+
+        @Override
+        public void onUnityAdsBidFailedToLoad(String uuid) {
+
+        }
+
+        @Override
+        public void onUnityAdsClick(String s) {
+
+        }
+
+        @Override
+        public void onUnityAdsPlacementStateChanged(String s, UnityAds.PlacementState placementState, UnityAds.PlacementState placementState1) {
+
+        }
     }
 }

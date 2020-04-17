@@ -35,8 +35,9 @@ public class UnityRouter {
         initMediationMetadata(launcherActivity);
         
         boolean testMode = false;
-        boolean enablePerPlacementLoad = true;
-        UnityAds.initialize(launcherActivity, gameId, interstitialRouter, testMode, enablePerPlacementLoad);
+        boolean enablePerPlacementLoad = false;
+        UnityAds.addListener(interstitialRouter);
+        UnityAds.initialize(launcherActivity, gameId, testMode, enablePerPlacementLoad, true);
         return true;
     }
 

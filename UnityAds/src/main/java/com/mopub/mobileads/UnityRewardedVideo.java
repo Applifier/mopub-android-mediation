@@ -1,13 +1,17 @@
 package com.mopub.mobileads;
 
 import android.app.Activity;
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.mopub.common.BaseLifecycleListener;
+import com.mopub.common.DataKeys;
 import com.mopub.common.LifecycleListener;
 import com.mopub.common.MoPubReward;
 import com.mopub.common.logging.MoPubLog;
+import com.unity3d.ads.headerbidding.IHeaderBiddingListener;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.metadata.MediationMetaData;
@@ -30,6 +34,9 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
 
     @NonNull
     private String mPlacementId = "";
+    private String mUUID = UUID.randomUUID().toString();
+    private boolean mBidLoaded = false;
+    private boolean mUseHeaderBidding = false;
 
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
@@ -88,11 +95,39 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
 
         UnityRouter.getInterstitialRouter().addListener(mPlacementId, this);
 
+        final String adm = serverExtras.get(DataKeys.ADM_KEY);
+
+        if (!TextUtils.isEmpty(adm)) {
+            mUseHeaderBidding = true;
+            UnityAds.addListener(new UnityAdsAdapterConfiguration.HeaderBiddingListener() {
+                @Override
+                public void onUnityAdsBidLoaded(String uuid) {
+                    if (uuid == UnityRewardedVideo.this.mUUID) {
+                        UnityAds.removeListener(this);
+                        UnityRewardedVideo.this.onUnityAdsBidLoaded();
+                    }
+                }
+
+                @Override
+                public void onUnityAdsBidFailedToLoad(String uuid) {
+                    if (uuid == UnityRewardedVideo.this.mUUID) {
+                        UnityAds.removeListener(this);
+                        UnityRewardedVideo.this.onUnityAdsBidFailedToLoad();
+                    }
+                }
+            });
+
+            UnityAds.loadBid(mUUID, mPlacementId, adm);
+        }
+
         UnityAds.load(mPlacementId);
     }
 
     @Override
     public boolean hasVideoAvailable() {
+        if (mUseHeaderBidding) {
+            return  UnityAds.isReady(mPlacementId) && mBidLoaded;
+        }
         return UnityAds.isReady(mPlacementId);
     }
 
@@ -100,12 +135,16 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
     public void showVideo() {
         MoPubLog.log(SHOW_ATTEMPTED, ADAPTER_NAME);
 
-        if (UnityAds.isReady(mPlacementId) && mLauncherActivity != null) {
+        if (hasVideoAvailable() && mLauncherActivity != null) {
             MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
             metadata.setOrdinal(++impressionOrdinal);
             metadata.commit();
 
-            UnityAds.show((Activity) mLauncherActivity, mPlacementId);
+            if (mUseHeaderBidding) {
+                UnityAds.show((Activity) mLauncherActivity, mUUID);
+            } else {
+                UnityAds.show((Activity) mLauncherActivity, mPlacementId);
+            }
         } else {
             // lets Unity Ads know when ads fail to show
             MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
@@ -139,6 +178,9 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
 
     @Override
     public void onUnityAdsPlacementStateChanged(String placementId, UnityAds.PlacementState oldState, UnityAds.PlacementState newState) {
+        if (mUseHeaderBidding) {
+            return;
+        }
         if (placementId.equals(mPlacementId)) {
             if (newState == UnityAds.PlacementState.NO_FILL) {
                 MoPubRewardedVideoManager.onRewardedVideoLoadFailure(UnityRewardedVideo.class, mPlacementId, MoPubErrorCode.NETWORK_NO_FILL);
@@ -150,11 +192,13 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
                 UnityRouter.getInterstitialRouter().removeListener(mPlacementId);
             }
         }
-
     }
 
     @Override
     public void onUnityAdsReady(String placementId) {
+        if (mUseHeaderBidding) {
+            return;
+        }
         if (placementId.equals(mPlacementId)) {
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity rewarded video cached for placement " +
                     placementId + ".");
@@ -218,6 +262,26 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
                 errorCode.getIntCode(),
                 errorCode);
 
+    }
+
+    public void onUnityAdsBidLoaded() {
+        mBidLoaded = true;
+        MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity rewarded video cached for placement " +
+                mPlacementId + ".");
+        MoPubRewardedVideoManager.onRewardedVideoLoadSuccess(UnityRewardedVideo.class, mPlacementId);
+
+        MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
+    }
+
+    public void onUnityAdsBidFailedToLoad() {
+        mBidLoaded = false;
+        MoPubRewardedVideoManager.onRewardedVideoLoadFailure(UnityRewardedVideo.class, mPlacementId, MoPubErrorCode.NETWORK_INVALID_STATE);
+
+        MoPubLog.log(LOAD_FAILED, ADAPTER_NAME,
+                MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
+                MoPubErrorCode.NETWORK_NO_FILL);
+
+        UnityRouter.getInterstitialRouter().removeListener(mPlacementId);
     }
 
     private static final class UnityLifecycleListener extends BaseLifecycleListener {
