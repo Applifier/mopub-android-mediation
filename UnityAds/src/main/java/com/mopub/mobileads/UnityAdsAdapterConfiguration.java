@@ -41,14 +41,6 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     public String getBiddingToken(@NonNull Context context) {
         if (!requestingToken) {
             requestingToken = true;
-            UnityAds.addListener(new HeaderBiddingListener() {
-                @Override
-                public void onUnityAdsTokenReady(String s) {
-                    UnityAds.removeListener(this);
-                    UnityAdsAdapterConfiguration.this.requestingToken = false;
-                    UnityAdsAdapterConfiguration.this.token = s;
-                }
-            });
             UnityAds.requestToken();
         }
         return token;
@@ -109,6 +101,14 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
         MoPubLog.LogLevel logLevel = MoPubLog.getLogLevel();
         boolean debugModeEnabled = logLevel == MoPubLog.LogLevel.DEBUG;
         UnityAds.setDebugMode(debugModeEnabled);
+
+        UnityAds.addListener(new HeaderBiddingListener() {
+            @Override
+            public void onUnityAdsTokenReady(String s) {
+                UnityAdsAdapterConfiguration.this.requestingToken = false;
+                UnityAdsAdapterConfiguration.this.token = s;
+            }
+        });
     }
 
     public static class HeaderBiddingListener implements IHeaderBiddingListener, IUnityAdsExtendedListener {
