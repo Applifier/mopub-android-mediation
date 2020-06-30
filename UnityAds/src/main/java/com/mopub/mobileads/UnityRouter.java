@@ -36,9 +36,12 @@ public class UnityRouter {
         
         boolean testMode = false;
         boolean enablePerPlacementLoad = false;
-        UnityAds.addListener(interstitialRouter);
         UnityAds.initialize(launcherActivity, gameId, testMode, enablePerPlacementLoad, true);
         return true;
+    }
+
+    static void subscribeToListeners() {
+        UnityAds.addListener(interstitialRouter);
     }
 
     static void initGdpr(Activity activity) {

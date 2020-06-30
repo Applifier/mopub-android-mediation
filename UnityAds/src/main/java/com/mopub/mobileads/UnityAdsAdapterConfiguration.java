@@ -73,6 +73,8 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
 
         boolean networkInitializationSucceeded = false;
 
+        UnityRouter.subscribeToListeners();
+
         synchronized (UnityAdsAdapterConfiguration.class) {
             try {
                 if (UnityAds.isInitialized()) {
