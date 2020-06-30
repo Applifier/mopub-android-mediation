@@ -60,7 +60,7 @@ public class UnityInterstitial extends CustomEventInterstitial implements IUnity
             UnityAds.addListener(new UnityAdsAdapterConfiguration.HeaderBiddingListener() {
                 @Override
                 public void onUnityAdsBidLoaded(String uuid) {
-                    if (uuid == UnityInterstitial.this.mUUID) {
+                    if (uuid.equals(UnityInterstitial.this.mUUID)) {
                         UnityAds.removeListener(this);
                         UnityInterstitial.this.onUnityAdsBidLoaded();
                     }
@@ -68,7 +68,7 @@ public class UnityInterstitial extends CustomEventInterstitial implements IUnity
 
                 @Override
                 public void onUnityAdsBidFailedToLoad(String uuid) {
-                    if (uuid == UnityInterstitial.this.mUUID) {
+                    if (uuid.equals(UnityInterstitial.this.mUUID)) {
                         UnityAds.removeListener(this);
                         UnityInterstitial.this.onUnityAdsBidFailedToLoad();
                     }

@@ -102,7 +102,7 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
             UnityAds.addListener(new UnityAdsAdapterConfiguration.HeaderBiddingListener() {
                 @Override
                 public void onUnityAdsBidLoaded(String uuid) {
-                    if (uuid == UnityRewardedVideo.this.mUUID) {
+                    if (uuid.equals(UnityRewardedVideo.this.mUUID)) {
                         UnityAds.removeListener(this);
                         UnityRewardedVideo.this.onUnityAdsBidLoaded();
                     }
@@ -110,7 +110,7 @@ public class UnityRewardedVideo extends CustomEventRewardedVideo implements IUni
 
                 @Override
                 public void onUnityAdsBidFailedToLoad(String uuid) {
-                    if (uuid == UnityRewardedVideo.this.mUUID) {
+                    if (uuid.equals(UnityRewardedVideo.this.mUUID)) {
                         UnityAds.removeListener(this);
                         UnityRewardedVideo.this.onUnityAdsBidFailedToLoad();
                     }
