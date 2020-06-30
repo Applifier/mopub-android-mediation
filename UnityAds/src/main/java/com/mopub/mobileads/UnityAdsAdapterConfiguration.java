@@ -24,7 +24,7 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
 
     // Adapter's keys
     public static final String ADAPTER_VERSION = BuildConfig.VERSION_NAME;
-    private static final String MOPUB_NETWORK_NAME = BuildConfig.NETWORK_NAME;
+    private static final String MOPUB_NETWORK_NAME = "unity";//BuildConfig.NETWORK_NAME;
     private static final String ADAPTER_NAME = UnityAdsAdapterConfiguration.class.getSimpleName();
 
     private boolean requestingToken = false;
