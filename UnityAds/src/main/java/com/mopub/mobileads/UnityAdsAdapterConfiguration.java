@@ -27,9 +27,6 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     private static final String MOPUB_NETWORK_NAME = "unity";//BuildConfig.NETWORK_NAME;
     private static final String ADAPTER_NAME = UnityAdsAdapterConfiguration.class.getSimpleName();
 
-    private boolean requestingToken = false;
-    private String token = null;
-
     @NonNull
     @Override
     public String getAdapterVersion() {
@@ -39,11 +36,7 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     @Nullable
     @Override
     public String getBiddingToken(@NonNull Context context) {
-        if (!requestingToken) {
-            requestingToken = true;
-            UnityAds.requestToken();
-        }
-        return token;
+        return UnityAds.requestToken();
     }
 
     @NonNull
@@ -103,14 +96,6 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
         MoPubLog.LogLevel logLevel = MoPubLog.getLogLevel();
         boolean debugModeEnabled = logLevel == MoPubLog.LogLevel.DEBUG;
         UnityAds.setDebugMode(debugModeEnabled);
-
-        UnityAds.addListener(new HeaderBiddingListener() {
-            @Override
-            public void onUnityAdsTokenReady(String s) {
-                UnityAdsAdapterConfiguration.this.requestingToken = false;
-                UnityAdsAdapterConfiguration.this.token = s;
-            }
-        });
     }
 
     public static class HeaderBiddingListener implements IHeaderBiddingListener, IUnityAdsExtendedListener {
