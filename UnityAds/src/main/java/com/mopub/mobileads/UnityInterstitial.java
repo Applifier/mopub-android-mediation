@@ -2,17 +2,21 @@ package com.mopub.mobileads;
 
 import android.app.Activity;
 import android.content.Context;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.mopub.common.DataKeys;
 import com.mopub.common.LifecycleListener;
 import com.mopub.common.logging.MoPubLog;
+import com.unity3d.ads.headerbidding.IHeaderBiddingListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 import com.unity3d.ads.metadata.MediationMetaData;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CLICKED;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CUSTOM;
@@ -30,6 +34,9 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
     private String mPlacementId = "video";
     private int impressionOrdinal;
     private int missedImpressionOrdinal;
+    private String mUUID = UUID.randomUUID().toString();
+    private boolean mBidLoaded = false;
+    private boolean mUseHeaderBidding = false;
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
 
@@ -45,6 +52,31 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
         mContext = context;
 
         setAutomaticImpressionAndClickTracking(false);
+
+        final String adm = extras.get(DataKeys.ADM_KEY);
+
+        if (!TextUtils.isEmpty(adm)) {
+            mUseHeaderBidding = true;
+            UnityAds.addListener(new UnityAdsAdapterConfiguration.HeaderBiddingListener() {
+                @Override
+                public void onUnityAdsBidLoaded(String uuid) {
+                    if (uuid.equals(UnityInterstitial.this.mUUID)) {
+                        UnityAds.removeListener(this);
+                        UnityInterstitial.this.onUnityAdsBidLoaded();
+                    }
+                }
+
+                @Override
+                public void onUnityAdsBidFailedToLoad(String uuid) {
+                    if (uuid.equals(UnityInterstitial.this.mUUID)) {
+                        UnityAds.removeListener(this);
+                        UnityInterstitial.this.onUnityAdsBidFailedToLoad();
+                    }
+                }
+            });
+            UnityAds.loadBid(mUUID, mPlacementId, adm);
+        }
+
         UnityAds.load(mPlacementId);
 
         mUnityAdsAdapterConfiguration.setCachedInitializationParameters(context, extras);
@@ -64,16 +96,27 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
         }
     }
 
+    public boolean hasVideoAvailable() {
+        if (mUseHeaderBidding) {
+            return  UnityAds.isReady(mPlacementId) && mBidLoaded;
+        }
+        return UnityAds.isReady(mPlacementId);
+    }
+
     @Override
     protected void show() {
         MoPubLog.log(SHOW_ATTEMPTED, ADAPTER_NAME);
 
-        if (UnityAds.isReady(mPlacementId) && mContext != null) {
+        if (hasVideoAvailable() && mContext != null) {
             MediationMetaData metadata = new MediationMetaData(mContext);
             metadata.setOrdinal(++impressionOrdinal);
             metadata.commit();
 
-            UnityAds.show((Activity) mContext, mPlacementId);
+            if (mUseHeaderBidding) {
+                UnityAds.show((Activity) mContext, mUUID);
+            } else {
+                UnityAds.show((Activity) mContext, mPlacementId);
+            }
         } else {
             // lets Unity Ads know when ads fail to show
             MediationMetaData metadata = new MediationMetaData(mContext);
@@ -113,6 +156,9 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
 
     @Override
     public void onUnityAdsReady(String placementId) {
+        if (mUseHeaderBidding) {
+            return;
+        }
         if (mLoadListener != null) {
             mLoadListener.onAdLoaded();
 
@@ -161,6 +207,9 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
 
     // @Override
     public void onUnityAdsPlacementStateChanged(String placementId, UnityAds.PlacementState oldState, UnityAds.PlacementState newState) {
+        if (mUseHeaderBidding) {
+            return;
+        }
         if (placementId.equals(mPlacementId) && mLoadListener != null) {
             if (newState == UnityAds.PlacementState.NO_FILL) {
                 mLoadListener.onAdLoadFailed(MoPubErrorCode.NETWORK_NO_FILL);
@@ -186,5 +235,25 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
                     errorCode.getIntCode(),
                     errorCode);
         }
+    }
+
+    public void onUnityAdsBidLoaded() {
+        mBidLoaded = true;
+
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoaded();
+            MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
+        }
+    }
+
+    public void onUnityAdsBidFailedToLoad() {
+        mBidLoaded = false;
+
+        mInteractionListener.onAdFailed(MoPubErrorCode.NETWORK_INVALID_STATE);
+        UnityRouter.getInterstitialRouter().removeListener(mPlacementId);
+
+        MoPubLog.log(LOAD_FAILED, ADAPTER_NAME,
+                MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
+                MoPubErrorCode.NETWORK_NO_FILL);
     }
 }
