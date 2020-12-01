@@ -161,7 +161,6 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
         }
         if (mLoadListener != null) {
             mLoadListener.onAdLoaded();
-
             MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
         }
     }
@@ -249,7 +248,10 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
     public void onUnityAdsBidFailedToLoad() {
         mBidLoaded = false;
 
-        mInteractionListener.onAdFailed(MoPubErrorCode.NETWORK_INVALID_STATE);
+        if (mInteractionListener != null) {
+            mInteractionListener.onAdFailed(MoPubErrorCode.NETWORK_INVALID_STATE);
+        }
+
         UnityRouter.getInterstitialRouter().removeListener(mPlacementId);
 
         MoPubLog.log(LOAD_FAILED, ADAPTER_NAME,

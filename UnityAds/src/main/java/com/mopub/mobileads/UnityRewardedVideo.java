@@ -286,14 +286,18 @@ public class UnityRewardedVideo extends BaseAd implements IUnityAdsExtendedListe
     public void onUnityAdsBidLoaded() {
         mBidLoaded = true;
         MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity rewarded video cached for placement " + mPlacementId + ".");
-        mLoadListener.onAdLoaded();
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoaded();
+        }
 
         MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
     }
 
     public void onUnityAdsBidFailedToLoad() {
         mBidLoaded = false;
-        mLoadListener.onAdLoadFailed(MoPubErrorCode.NETWORK_INVALID_STATE);
+        if (mLoadListener != null) {
+            mLoadListener.onAdLoadFailed(MoPubErrorCode.NETWORK_INVALID_STATE);
+        }
 
         MoPubLog.log(LOAD_FAILED, ADAPTER_NAME,
                 MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
