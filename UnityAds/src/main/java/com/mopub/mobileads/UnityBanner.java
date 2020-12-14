@@ -9,6 +9,9 @@ import androidx.annotation.Nullable;
 
 import com.mopub.common.LifecycleListener;
 import com.mopub.common.logging.MoPubLog;
+
+import com.unity3d.ads.IUnityAdsInitializationListener;
+import com.unity3d.ads.UnityAds;
 import com.unity3d.services.banners.BannerErrorInfo;
 import com.unity3d.services.banners.BannerView;
 import com.unity3d.services.banners.UnityBannerSize;
@@ -71,29 +74,24 @@ public class UnityBanner extends BaseAd implements BannerView.IListener {
             return;
         }
 
-        if (UnityRouter.initUnityAds(extras, (Activity) context)) {
-            final UnityBannerSize bannerSize = unityAdsAdSizeFromAdData(adData);
+        final BannerView.IListener bannerlistener = this;
 
-            if (mBannerView != null) {
-                mBannerView.destroy();
-                mBannerView = null;
-            }
-
-            mBannerView = new BannerView((Activity) context, placementId, bannerSize);
-            mBannerView.setListener(this);
-            mBannerView.load();
-
-            MoPubLog.log(getAdNetworkId(), LOAD_ATTEMPTED, ADAPTER_NAME);
-        } else {
-            MoPubLog.log(getAdNetworkId(), CUSTOM, ADAPTER_NAME, "Failed to initialize Unity Ads");
-            MoPubLog.log(getAdNetworkId(), LOAD_FAILED, ADAPTER_NAME,
-                    MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
-                    MoPubErrorCode.NETWORK_NO_FILL);
-
-            if (mLoadListener != null) {
-                mLoadListener.onAdLoadFailed(MoPubErrorCode.NETWORK_NO_FILL);
-            }
+        if (!UnityAds.isInitialized()) {
+            UnityRouter.initUnityAds(extras, context, null);
         }
+
+        final UnityBannerSize bannerSize = unityAdsAdSizeFromAdData(adData);
+
+        if (mBannerView != null) {
+            mBannerView.destroy();
+            mBannerView = null;
+        }
+
+        mBannerView = new BannerView((Activity) context, placementId, bannerSize);
+        mBannerView.setListener(bannerlistener);
+        mBannerView.load();
+
+        MoPubLog.log(getAdNetworkId(), LOAD_ATTEMPTED, ADAPTER_NAME);
     }
 
     @Override
