@@ -34,7 +34,7 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     @Nullable
     @Override
     public String getBiddingToken(@NonNull Context context) {
-        return null;
+        return UnityAds.getToken();
     }
 
     @NonNull

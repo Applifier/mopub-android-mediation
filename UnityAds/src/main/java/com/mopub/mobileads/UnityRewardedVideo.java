@@ -7,17 +7,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.mopub.common.BaseLifecycleListener;
+import com.mopub.common.DataKeys;
 import com.mopub.common.LifecycleListener;
 import com.mopub.common.MoPubReward;
 import com.mopub.common.Preconditions;
 import com.mopub.common.logging.MoPubLog;
 import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.IUnityAdsLoadListener;
+import com.unity3d.ads.UnityAdsLoadOptions;
+import com.unity3d.ads.UnityAdsShowOptions;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.metadata.MediationMetaData;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CLICKED;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CUSTOM;
@@ -35,6 +39,7 @@ public class UnityRewardedVideo extends BaseAd implements IUnityAdsExtendedListe
 
     @NonNull
     private String mPlacementId = "rewardedVideo";
+    private String mObjectId;
 
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
@@ -111,10 +116,21 @@ public class UnityRewardedVideo extends BaseAd implements IUnityAdsExtendedListe
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(adData);
 
+        final Map<String, String> extras = adData.getExtras();
         mPlacementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), mPlacementId);
         setAutomaticImpressionAndClickTracking(false);
 
-        UnityAds.load(mPlacementId, mUnityLoadListener);
+        String markup = extras.get(DataKeys.ADM_KEY);
+
+        if (markup != null) {
+            mObjectId = UUID.randomUUID().toString();
+            UnityAdsLoadOptions loadOptions = new UnityAdsLoadOptions();
+            loadOptions.setAdMarkup(markup);
+            loadOptions.setObjectId(mObjectId);
+            UnityAds.load(mPlacementId, loadOptions, mUnityLoadListener);
+        } else {
+            UnityAds.load(mPlacementId, mUnityLoadListener);
+        }
     }
 
     /**
@@ -166,7 +182,13 @@ public class UnityRewardedVideo extends BaseAd implements IUnityAdsExtendedListe
 
             UnityAds.addListener(UnityRewardedVideo.this);
 
-            UnityAds.show(mLauncherActivity, mPlacementId);
+            if (mObjectId != null) {
+                UnityAdsShowOptions showOptions = new UnityAdsShowOptions();
+                showOptions.setObjectId(mObjectId);
+                UnityAds.show(mLauncherActivity, mPlacementId, showOptions);
+            } else {
+                UnityAds.show(mLauncherActivity, mPlacementId);
+            }
         } else {
             // Lets Unity Ads know when ads fail to show
             MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
