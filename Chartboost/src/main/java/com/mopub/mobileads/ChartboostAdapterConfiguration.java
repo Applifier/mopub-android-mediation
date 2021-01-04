@@ -116,9 +116,6 @@ public class ChartboostAdapterConfiguration extends BaseAdapterConfiguration {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(configuration);
 
-        if(Chartboost.isSdkStarted())
-            return true;
-
         // Pass the user consent from the MoPub SDK to Chartboost as per GDPR
         PersonalInfoManager personalInfoManager = MoPub.getPersonalInformationManager();
 
@@ -154,14 +151,24 @@ public class ChartboostAdapterConfiguration extends BaseAdapterConfiguration {
                     " failed due to missing application signature.");
         }
 
+        boolean initStarted = Chartboost.isSdkStarted();
+        boolean initConfigExists = false;
+
         final String appId = configuration.get(APP_ID_KEY);
         final String appSignature = configuration.get(APP_SIGNATURE_KEY);
 
         if (!TextUtils.isEmpty(appId) && !TextUtils.isEmpty(appSignature)) {
             if (appId.equals(mAppId) && appSignature.equals(mAppSignature)) {
-                // We don't need to reinitialize.
-                return false;
+                initConfigExists = true;
             }
+        } else {
+            return false; // AppId or AppSignature is empty, fail initialization.
+        }
+
+        // If Chartboost is already initialized with same configuration, no need to initialize
+        // For any other case, reinitialize
+        if (initConfigExists && initStarted) {
+            return true;
         }
 
         mAppId = appId;

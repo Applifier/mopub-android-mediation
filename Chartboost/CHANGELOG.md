@@ -1,4 +1,7 @@
 ## Changelog
+  * 8.2.0.2
+    * Prevent Chartboost SDK from initializing same configuration cases.
+
   * 8.2.0.1
     * Fix a bug where Chartboost SDK initialization can get called multiple times unnecessarily.
 
