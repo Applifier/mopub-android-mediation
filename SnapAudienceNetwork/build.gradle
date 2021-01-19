@@ -1,10 +1,10 @@
-project.version = '1.0.3.1.0'
+project.version = '1.0.3.2.0'
 project.ext.networkName = 'snap'
 
 apply from: '../shared-build.gradle'
 
 dependencies {
-    implementation(name: 'snap-adkit-1.0.3.1', ext: 'aar')
+    implementation(name: 'snap-adkit-1.0.3.2', ext: 'aar')
 
     // Required by Snap. Keep in sync with the MoPub Android sample app
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
