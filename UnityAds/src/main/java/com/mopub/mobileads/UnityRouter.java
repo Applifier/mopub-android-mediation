@@ -31,7 +31,7 @@ public class UnityRouter {
         }
         initMediationMetadata(context);
 
-        boolean testMode = false;
+        boolean testMode = true;
         boolean enablePerPlacementLoad = true;
         UnityAds.initialize(context, gameId, testMode, enablePerPlacementLoad, initializationListener);
     }
@@ -67,6 +67,11 @@ public class UnityRouter {
         mediationMetaData.setVersion(MoPub.SDK_VERSION);
         mediationMetaData.set("adapter_version", UnityAdsAdapterConfiguration.ADAPTER_VERSION);
         mediationMetaData.commit();
+
+        MetaData headerBiddingMeta = new MetaData(context);
+        headerBiddingMeta.setCategory("headerbidding");
+        headerBiddingMeta.set("mode", "enabled");
+        headerBiddingMeta.commit();
     }
 
     static String placementIdForServerExtras(Map<String, String> serverExtras, String defaultPlacementId) {
