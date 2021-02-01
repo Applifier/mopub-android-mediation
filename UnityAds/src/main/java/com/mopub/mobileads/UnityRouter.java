@@ -2,6 +2,7 @@ package com.mopub.mobileads;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.mopub.common.MoPub;
 import com.mopub.common.logging.MoPubLog;
@@ -20,6 +21,7 @@ public class UnityRouter {
     public static final String GAME_ID_KEY = "gameId";
     public static final String ZONE_ID_KEY = "zoneId";
     public static final String PLACEMENT_ID_KEY = "placementId";
+    public static final String TEST_MODE_KEY = "testMode";
     private static final String ADAPTER_NAME = UnityRouter.class.getSimpleName();
 
     static void initUnityAds(Map<String, String> serverExtras, Context context, IUnityAdsInitializationListener initializationListener) {
@@ -32,6 +34,11 @@ public class UnityRouter {
         initMediationMetadata(context);
 
         boolean testMode = false;
+        String testModeRequest = serverExtras.get(TEST_MODE_KEY);
+        Log.d("Test", "testModeRequest: "+ testModeRequest);
+        if (testModeRequest.equalsIgnoreCase("true") ) {
+            testMode = true;
+        }
         boolean enablePerPlacementLoad = true;
         UnityAds.initialize(context, gameId, testMode, enablePerPlacementLoad, initializationListener);
     }
@@ -67,6 +74,11 @@ public class UnityRouter {
         mediationMetaData.setVersion(MoPub.SDK_VERSION);
         mediationMetaData.set("adapter_version", UnityAdsAdapterConfiguration.ADAPTER_VERSION);
         mediationMetaData.commit();
+
+        MetaData headerBiddingMeta = new MetaData(context);
+        headerBiddingMeta.setCategory("headerbidding");
+        headerBiddingMeta.set("mode", "enabled");
+        headerBiddingMeta.commit();
     }
 
     static String placementIdForServerExtras(Map<String, String> serverExtras, String defaultPlacementId) {
