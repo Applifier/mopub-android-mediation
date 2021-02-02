@@ -1,5 +1,6 @@
 package com.mopub.mobileads;
 
+import android.app.Activity;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
@@ -11,6 +12,7 @@ import com.mopub.common.logging.MoPubLog;
 import com.unity3d.ads.IUnityAdsLoadListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.UnityAdsLoadOptions;
+import com.unity3d.ads.UnityAdsShowOptions;
 import com.unity3d.ads.mediation.IUnityAdsExtendedListener;
 import com.unity3d.ads.metadata.MediationMetaData;
 
@@ -22,6 +24,7 @@ import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CUSTOM;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.LOAD_FAILED;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.LOAD_SUCCESS;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOULD_REWARD;
+import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOW_ATTEMPTED;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOW_FAILED;
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOW_SUCCESS;
 import static com.unity3d.ads.UnityAds.UnityAdsError.SHOW_ERROR;
@@ -32,9 +35,15 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
     protected String mPlacementId = "";
     private String mObjectId;
 
-    private Context mContext;
+    protected Context mContext;
     private int impressionOrdinal;
     private int missedImpressionOrdinal;
+    @NonNull
+    protected UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
+
+    public BaseAdFullScreen() {
+        mUnityAdsAdapterConfiguration = new UnityAdsAdapterConfiguration();
+    }
 
     /**
      * IUnityAdsLoadListener instance. Contains ad load success and fail logic.
@@ -73,6 +82,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
 
         final Map<String, String> extras = adData.getExtras();
         mPlacementId = UnityRouter.placementIdForServerExtras(extras, mPlacementId);
+        mContext = context;
 
         setAutomaticImpressionAndClickTracking(false);
 
@@ -89,6 +99,59 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
             UnityAds.load(mPlacementId, loadOptions, mUnityLoadListener);
         } else {
             UnityAds.load(mPlacementId, mUnityLoadListener);
+        }
+    }
+
+    @Override
+    protected void show() {
+        MoPubLog.log(SHOW_ATTEMPTED, getAdapterName());
+
+        if (mContext == null || !(mContext instanceof Activity)) {
+            MoPubLog.log(CUSTOM, getAdapterName(),
+                    String.format("Failed to show Unity %s as the context calling it is null, or is not an Activity.",
+                            getAdTypeName()));
+
+            MoPubLog.log(SHOW_FAILED, getAdapterName(),
+                    MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR.getIntCode(),
+                    MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR);
+
+            if (mInteractionListener != null) {
+                mInteractionListener.onAdFailed(MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR);
+            }
+            return;
+        }
+
+        if (UnityAds.isReady(mPlacementId)) {
+            // Lets Unity Ads know when ads succeeds to show
+            MediationMetaData metadata = new MediationMetaData(mContext);
+            metadata.setOrdinal(++impressionOrdinal);
+            metadata.commit();
+
+            UnityAds.addListener(BaseAdFullScreen.this);
+
+            if (mObjectId != null) {
+                UnityAdsShowOptions showOptions = new UnityAdsShowOptions();
+                showOptions.setObjectId(mObjectId);
+                UnityAds.show((Activity) mContext, mPlacementId, showOptions);
+            } else {
+                UnityAds.show((Activity) mContext, mPlacementId);
+            }
+        } else {
+            // Lets Unity Ads know when ads fail to show
+            MediationMetaData metadata = new MediationMetaData(mContext);
+            metadata.setMissedImpressionOrdinal(++missedImpressionOrdinal);
+            metadata.commit();
+
+            MoPubLog.log(CUSTOM, getAdapterName(),
+                    String.format("Attempted to show Unity %s before it was available.",
+                            getAdTypeName()));
+            MoPubLog.log(SHOW_FAILED, getAdapterName(),
+                    MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
+                    MoPubErrorCode.NETWORK_NO_FILL);
+
+            if (mInteractionListener != null) {
+                mInteractionListener.onAdFailed(MoPubErrorCode.NETWORK_NO_FILL);
+            }
         }
     }
 
@@ -121,6 +184,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
 
     @Override
     public void onUnityAdsFinish(String placementId, UnityAds.FinishState finishState) {
+        //TODO this diverges some between Interstitial and RewardedAd
         MoPubLog.log(CUSTOM, getAdapterName(), "Unity Ad finished with finish state = " + finishState);
 
         if (finishState == UnityAds.FinishState.ERROR) {
@@ -139,6 +203,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
             MoPubLog.log(SHOULD_REWARD, getAdapterName(), MoPubReward.NO_REWARD_AMOUNT, MoPubReward.NO_REWARD_LABEL);
 
             if (mInteractionListener != null) {
+                //TODO Interstitial doens't send onAdComplete
                 mInteractionListener.onAdComplete(MoPubReward.success(MoPubReward.NO_REWARD_LABEL,
                         MoPubReward.DEFAULT_REWARD_AMOUNT));
                 MoPubLog.log(CUSTOM, getAdapterName(),
