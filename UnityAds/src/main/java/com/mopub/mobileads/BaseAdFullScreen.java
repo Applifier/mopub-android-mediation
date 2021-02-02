@@ -51,7 +51,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
     private IUnityAdsLoadListener mUnityLoadListener = new IUnityAdsLoadListener() {
         @Override
         public void onUnityAdsAdLoaded(String placementId) {
-            MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s successfully loaded for placementId %i", getAdTypeName(), placementId));
+            MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s successfully loaded for placementId %s", getAdTypeName(), placementId));
             MoPubLog.log(LOAD_SUCCESS, getAdapterName());
 
             if (mLoadListener != null) {
@@ -61,7 +61,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
 
         @Override
         public void onUnityAdsFailedToLoad(String placementId) {
-            MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s failed to load for placement %i", getAdTypeName(), placementId));
+            MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s failed to load for placement %s", getAdTypeName(), placementId));
             MoPubLog.log(LOAD_FAILED, getAdapterName(), MoPubErrorCode.NETWORK_NO_FILL.getIntCode(), MoPubErrorCode.NETWORK_NO_FILL);
 
             if (mLoadListener != null) {
@@ -157,7 +157,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
 
     @Override
     public void onUnityAdsClick(String placementId) {
-        MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s clicked for placement %i.", getAdTypeName(), placementId));
+        MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s clicked for placement %s.", getAdTypeName(), placementId));
         MoPubLog.log(CLICKED, getAdapterName());
 
         if (mInteractionListener != null) {
@@ -177,7 +177,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
             mInteractionListener.onAdShown();
             mInteractionListener.onAdImpression();
         }
-        MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s started for placement %i.", getAdTypeName(), placementId));
+        MoPubLog.log(CUSTOM, getAdapterName(), String.format("Unity %s started for placement %s.", getAdTypeName(), placementId));
 
         MoPubLog.log(SHOW_SUCCESS, getAdapterName());
     }
@@ -189,7 +189,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
 
         if (finishState == UnityAds.FinishState.ERROR) {
             MoPubLog.log(CUSTOM, getAdapterName(),
-                    String.format("Unity %s encountered a playback error for placement %i.",
+                    String.format("Unity %s encountered a playback error for placement %s.",
                             getAdTypeName(), placementId));
             MoPubLog.log(SHOW_FAILED, getAdapterName(),
                     MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
@@ -207,7 +207,7 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
                 mInteractionListener.onAdComplete(MoPubReward.success(MoPubReward.NO_REWARD_LABEL,
                         MoPubReward.DEFAULT_REWARD_AMOUNT));
                 MoPubLog.log(CUSTOM, getAdapterName(),
-                        String.format("Unity %s completed for placement %i.",
+                        String.format("Unity %s completed for placement %s.",
                         getAdTypeName(), placementId));
             }
 

@@ -33,10 +33,10 @@ public class UnityRouter {
         }
         initMediationMetadata(context);
 
-        boolean testMode = false;
+        boolean testMode = true;
         String testModeRequest = serverExtras.get(TEST_MODE_KEY);
         Log.d("Test", "testModeRequest: "+ testModeRequest);
-        if (testModeRequest.equalsIgnoreCase("true") ) {
+        if (testModeRequest != null && testModeRequest.equalsIgnoreCase("true") ) {
             testMode = true;
         }
         boolean enablePerPlacementLoad = true;
