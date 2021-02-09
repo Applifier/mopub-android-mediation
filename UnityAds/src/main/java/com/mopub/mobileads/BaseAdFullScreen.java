@@ -183,47 +183,6 @@ public abstract class BaseAdFullScreen extends BaseAd implements IUnityAdsExtend
     }
 
     @Override
-    public void onUnityAdsFinish(String placementId, UnityAds.FinishState finishState) {
-        //TODO this diverges some between Interstitial and RewardedAd
-        MoPubLog.log(CUSTOM, getAdapterName(), "Unity Ad finished with finish state = " + finishState);
-
-        if (finishState == UnityAds.FinishState.ERROR) {
-            MoPubLog.log(CUSTOM, getAdapterName(),
-                    String.format("Unity %s encountered a playback error for placement %s.",
-                            getAdTypeName(), placementId));
-            MoPubLog.log(SHOW_FAILED, getAdapterName(),
-                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
-                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-
-            if (mInteractionListener != null) {
-                mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-            }
-
-        } else if (finishState == UnityAds.FinishState.COMPLETED) {
-            MoPubLog.log(SHOULD_REWARD, getAdapterName(), MoPubReward.NO_REWARD_AMOUNT, MoPubReward.NO_REWARD_LABEL);
-
-            if (mInteractionListener != null) {
-                //TODO Interstitial doens't send onAdComplete
-                mInteractionListener.onAdComplete(MoPubReward.success(MoPubReward.NO_REWARD_LABEL,
-                        MoPubReward.DEFAULT_REWARD_AMOUNT));
-                MoPubLog.log(CUSTOM, getAdapterName(),
-                        String.format("Unity %s completed for placement %s.",
-                        getAdTypeName(), placementId));
-            }
-
-        } else if (finishState == UnityAds.FinishState.SKIPPED) {
-            MoPubLog.log(CUSTOM, getAdapterName(),
-                    String.format("Unity %s was skipped, no reward will be given.",
-                            getAdTypeName()));
-        }
-
-        if (mInteractionListener != null) {
-            mInteractionListener.onAdDismissed();
-        }
-        UnityAds.removeListener(BaseAdFullScreen.this);
-    }
-
-    @Override
     public void onUnityAdsError(UnityAds.UnityAdsError unityAdsError, String message) {
         if (unityAdsError == SHOW_ERROR) {
             if (mContext != null) {

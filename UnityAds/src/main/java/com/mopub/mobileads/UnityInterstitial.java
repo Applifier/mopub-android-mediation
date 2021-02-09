@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.mopub.common.LifecycleListener;
+import com.mopub.common.MoPubReward;
 import com.mopub.common.logging.MoPubLog;
 import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.UnityAds;
@@ -14,6 +15,8 @@ import com.unity3d.ads.UnityAds;
 import java.util.Map;
 
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CUSTOM;
+import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOULD_REWARD;
+import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOW_FAILED;
 
 public class UnityInterstitial extends BaseAdFullScreen {
 
@@ -72,5 +75,29 @@ public class UnityInterstitial extends BaseAdFullScreen {
     @Override
     protected boolean checkAndInitializeSdk(@NonNull Activity launcherActivity, @NonNull AdData adData) throws Exception {
         return false;
+    }
+
+    @Override
+    public void onUnityAdsFinish(String placementId, UnityAds.FinishState finishState) {
+        MoPubLog.log(CUSTOM, getAdapterName(), "Unity Ad finished with finish state = " + finishState);
+        if (mInteractionListener != null) {
+            if (finishState == UnityAds.FinishState.ERROR) {
+                MoPubLog.log(CUSTOM, getAdapterName(),
+                        String.format("Unity %s encountered a playback error for placement %s.",
+                                getAdTypeName(), placementId));
+                MoPubLog.log(SHOW_FAILED, getAdapterName(),
+                        MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
+                        MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
+                mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
+
+            }
+            else {
+                MoPubLog.log(CUSTOM, getAdapterName(),
+                        String.format("Unity %s completed for placement %s.",
+                                getAdTypeName(), placementId));
+                mInteractionListener.onAdDismissed();
+            }
+        }
+        UnityAds.removeListener(UnityInterstitial.this);
     }
 }

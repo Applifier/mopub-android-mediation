@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import com.mopub.common.BaseLifecycleListener;
 import com.mopub.common.LifecycleListener;
+import com.mopub.common.MoPubReward;
 import com.mopub.common.Preconditions;
 import com.mopub.common.logging.MoPubLog;
 import com.unity3d.ads.IUnityAdsInitializationListener;
@@ -16,10 +17,13 @@ import com.unity3d.ads.UnityAds;
 import java.util.Map;
 
 import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.CUSTOM;
+import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOULD_REWARD;
+import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOW_FAILED;
 
 public class UnityRewardedVideo extends BaseAdFullScreen {
 
     private static final LifecycleListener sLifecycleListener = new UnityLifecycleListener();
+
     private static final class UnityLifecycleListener extends BaseLifecycleListener {
         @Override
         public void onCreate(@NonNull final Activity activity) {
@@ -100,5 +104,44 @@ public class UnityRewardedVideo extends BaseAdFullScreen {
             }
             return false;
         }
+    }
+    @Override
+    public void onUnityAdsFinish(String placementId, UnityAds.FinishState finishState) {
+        MoPubLog.log(CUSTOM, getAdapterName(), "Unity Ad finished with finish state = " + finishState);
+
+        if (finishState == UnityAds.FinishState.ERROR) {
+            MoPubLog.log(CUSTOM, getAdapterName(),
+                    String.format("Unity %s encountered a playback error for placement %s.",
+                            getAdTypeName(), placementId));
+            MoPubLog.log(SHOW_FAILED, getAdapterName(),
+                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
+                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
+
+            if (mInteractionListener != null) {
+                mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
+            }
+
+        } else if (finishState == UnityAds.FinishState.COMPLETED) {
+            MoPubLog.log(SHOULD_REWARD, getAdapterName(), MoPubReward.NO_REWARD_AMOUNT, MoPubReward.NO_REWARD_LABEL);
+
+            if (mInteractionListener != null) {
+                //TODO Interstitial doens't send onAdComplete
+                mInteractionListener.onAdComplete(MoPubReward.success(MoPubReward.NO_REWARD_LABEL,
+                        MoPubReward.DEFAULT_REWARD_AMOUNT));
+            }
+            MoPubLog.log(CUSTOM, getAdapterName(),
+                    String.format("Unity %s completed for placement %s.",
+                            getAdTypeName(), placementId));
+
+        } else if (finishState == UnityAds.FinishState.SKIPPED) {
+            MoPubLog.log(CUSTOM, getAdapterName(),
+                    String.format("Unity %s was skipped, no reward will be given.",
+                            getAdTypeName()));
+        }
+
+        if (mInteractionListener != null) {
+            mInteractionListener.onAdDismissed();
+        }
+        UnityAds.removeListener(UnityRewardedVideo.this);
     }
 }
