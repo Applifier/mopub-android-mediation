@@ -31,7 +31,7 @@ public class UnityRouter {
         }
         initMediationMetadata(context);
 
-        boolean testMode = true;
+        boolean testMode = false;
         boolean enablePerPlacementLoad = true;
         UnityAds.initialize(context, gameId, testMode, enablePerPlacementLoad, initializationListener);
     }
