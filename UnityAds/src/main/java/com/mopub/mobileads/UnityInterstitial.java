@@ -13,6 +13,7 @@ import com.unity3d.ads.IUnityAdsInitializationListener;
 import com.unity3d.ads.IUnityAdsLoadListener;
 import com.unity3d.ads.IUnityAdsShowListener;
 import com.unity3d.ads.UnityAds;
+import com.unity3d.ads.UnityAds.UnityAdsLoadError;
 import com.unity3d.ads.metadata.MediationMetaData;
 import com.unity3d.ads.UnityAds.UnityAdsShowError;
 
@@ -99,8 +100,9 @@ public class UnityInterstitial extends BaseAd {
         }
 
         @Override
-        public void onUnityAdsFailedToLoad(String placementId) {
-            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial failed to load for placement " + placementId);
+        public void onUnityAdsFailedToLoad(String placementId, UnityAdsLoadError error, String message) {
+            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial failed to load for placement " +
+                placementId + ", with error message: " + message);
             MoPubLog.log(LOAD_FAILED, ADAPTER_NAME, MoPubErrorCode.NETWORK_NO_FILL.getIntCode(), MoPubErrorCode.NETWORK_NO_FILL);
 
             if (mLoadListener != null) {
@@ -154,34 +156,6 @@ public class UnityInterstitial extends BaseAd {
      * IUnityAdsShowListener instance. Contains logic for callbacks when showing ads.
      */
     private IUnityAdsShowListener mUnityShowListener = new IUnityAdsShowListener() {
-        @Override
-        public void onUnityAdsShowFailure(String placementId, UnityAds.UnityAdsShowError error, String message) {
-            if (error == UnityAdsShowError.VIDEO_PLAYER_ERROR) {
-                MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial video encountered a playback error for " +
-                        "placement " + placementId);
-                MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
-                        MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
-                        MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-                if (mInteractionListener != null) {
-                    mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-                }
-            } else {
-                if (mContext != null) {
-                    // Lets Unity Ads know when ads fail to show
-                    MediationMetaData metadata = new MediationMetaData(mContext);
-                    metadata.setMissedImpressionOrdinal(++missedImpressionOrdinal);
-                    metadata.commit();
-                }
-
-                MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity rewarded video failed to show with error message: " + message);
-                MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
-                        MoPubErrorCode.UNSPECIFIED.getIntCode(),
-                        MoPubErrorCode.UNSPECIFIED);
-                if (mInteractionListener != null) {
-                    mInteractionListener.onAdFailed(MoPubErrorCode.UNSPECIFIED);
-                }
-            }
-        }
 
         @Override
         public void onUnityAdsShowStart(String placementId) {
@@ -207,6 +181,19 @@ public class UnityInterstitial extends BaseAd {
             if (mInteractionListener != null) {
                 MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial video completed for placement " + placementId);
                 mInteractionListener.onAdDismissed();
+            }
+        }
+
+        @Override
+        public void onUnityAdsShowFailure(String placementId, UnityAds.UnityAdsShowError error, String message) {
+            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial video encountered a playback error for " +
+                "placement " + placementId + ", with error message: " + message);
+
+            MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
+                  MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
+                  MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
+            if (mInteractionListener != null) {
+                  mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
             }
         }
     };
