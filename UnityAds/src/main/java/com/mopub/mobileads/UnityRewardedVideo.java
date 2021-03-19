@@ -16,8 +16,9 @@ import com.unity3d.ads.IUnityAdsLoadListener;
 import com.unity3d.ads.IUnityAdsShowListener;
 import com.unity3d.ads.UnityAds;
 import com.unity3d.ads.UnityAds.UnityAdsLoadError;
-import com.unity3d.ads.metadata.MediationMetaData;
 import com.unity3d.ads.UnityAds.UnityAdsShowError;
+import com.unity3d.ads.metadata.MediationMetaData;
+
 
 import java.util.Map;
 
@@ -236,7 +237,7 @@ public class UnityRewardedVideo extends BaseAd {
           }
 
           @Override
-          public void onUnityAdsShowFailure(String placementId, UnityAds.UnityAdsShowError error, String message) {
+          public void onUnityAdsShowFailure(String placementId, UnityAdsShowError error, String message) {
               MoPubLog.log(CUSTOM, ADAPTER_NAME,
                   "Unity rewarded video encountered a playback error for " +
                       "placement " + placementId + ", with error message: " + message);
