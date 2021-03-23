@@ -34,9 +34,10 @@ import static com.mopub.common.logging.MoPubLog.AdapterLogEvent.SHOW_SUCCESS;
 public class UnityRewardedVideo extends BaseAd {
     private static final LifecycleListener sLifecycleListener = new UnityLifecycleListener();
     private static final String ADAPTER_NAME = UnityRewardedVideo.class.getSimpleName();
+    private static final String DEFAULT_PLACEMENT_ID = "rewardedVideo";
 
     @NonNull
-    private String mPlacementId = "rewardedVideo";
+    private String mPlacementId;
 
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
@@ -113,10 +114,10 @@ public class UnityRewardedVideo extends BaseAd {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(adData);
 
-        mPlacementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), mPlacementId);
+        String placementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), DEFAULT_PLACEMENT_ID);
         setAutomaticImpressionAndClickTracking(false);
 
-        UnityAds.load(mPlacementId, mUnityLoadListener);
+        UnityAds.load(placementId, mUnityLoadListener);
     }
 
     /**
@@ -125,6 +126,7 @@ public class UnityRewardedVideo extends BaseAd {
     private IUnityAdsLoadListener mUnityLoadListener = new IUnityAdsLoadListener() {
         @Override
         public void onUnityAdsAdLoaded(String placementId) {
+            mPlacementId = placementId;
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity rewarded video successfully loaded for placementId " + placementId);
             MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
 
@@ -161,19 +163,7 @@ public class UnityRewardedVideo extends BaseAd {
             return;
         }
 
-        if (UnityAds.isReady(mPlacementId)) {
-            // Lets Unity Ads know when ads succeeds to show
-            MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
-            metadata.setOrdinal(++impressionOrdinal);
-            metadata.commit();
-
-            UnityAds.show(mLauncherActivity, mPlacementId);
-        } else {
-            // Lets Unity Ads know when ads fail to show
-            MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
-            metadata.setMissedImpressionOrdinal(++missedImpressionOrdinal);
-            metadata.commit();
-
+        if (mPlacementId ==  null) {
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Attempted to show Unity rewarded video before it was available.");
             MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
                     MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
@@ -182,7 +172,14 @@ public class UnityRewardedVideo extends BaseAd {
             if (mInteractionListener != null) {
                 mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
             }
+            return;
         }
+
+        MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
+        metadata.setOrdinal(++impressionOrdinal);
+        metadata.commit();
+
+        UnityAds.show(mLauncherActivity, mPlacementId, mUnityShowListener);
     }
 
     /**
