@@ -206,6 +206,6 @@ public class UnityInterstitial extends BaseAd {
 
     @Override
     protected boolean checkAndInitializeSdk(@NonNull final Activity activity, @NonNull final AdData adData) {
-        return true;
+        return false;
     }
 }
