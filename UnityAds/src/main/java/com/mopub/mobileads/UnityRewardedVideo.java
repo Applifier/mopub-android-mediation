@@ -36,8 +36,8 @@ public class UnityRewardedVideo extends BaseAd {
     private static final String ADAPTER_NAME = UnityRewardedVideo.class.getSimpleName();
     private static final String DEFAULT_PLACEMENT_ID = "rewardedVideo";
 
-    @NonNull
     private String mPlacementId;
+    private String mLoadedPlacementId;
 
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
@@ -113,10 +113,10 @@ public class UnityRewardedVideo extends BaseAd {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(adData);
 
-        String placementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), DEFAULT_PLACEMENT_ID);
+        mPlacementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), DEFAULT_PLACEMENT_ID);
         setAutomaticImpressionAndClickTracking(false);
 
-        UnityAds.load(placementId, mUnityLoadListener);
+        UnityAds.load(mPlacementId, mUnityLoadListener);
     }
 
     /**
@@ -125,7 +125,7 @@ public class UnityRewardedVideo extends BaseAd {
     private IUnityAdsLoadListener mUnityLoadListener = new IUnityAdsLoadListener() {
         @Override
         public void onUnityAdsAdLoaded(String placementId) {
-            mPlacementId = placementId;
+            mLoadedPlacementId = placementId;
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity rewarded video successfully loaded for placementId " + placementId);
             MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
 
@@ -162,15 +162,8 @@ public class UnityRewardedVideo extends BaseAd {
             return;
         }
 
-        if (mPlacementId ==  null) {
-            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Attempted to show Unity rewarded video before it was available.");
-            MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
-                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
-                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-
-            if (mInteractionListener != null) {
-                mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-            }
+        if (mLoadedPlacementId ==  null) {
+            UnityAds.show(mLauncherActivity, mPlacementId, mUnityShowListener);
             return;
         }
 
@@ -178,7 +171,7 @@ public class UnityRewardedVideo extends BaseAd {
         metadata.setOrdinal(++impressionOrdinal);
         metadata.commit();
 
-        UnityAds.show(mLauncherActivity, mPlacementId, mUnityShowListener);
+        UnityAds.show(mLauncherActivity, mLoadedPlacementId, mUnityShowListener);
     }
 
     /**
