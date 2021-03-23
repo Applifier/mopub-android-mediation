@@ -46,7 +46,6 @@ public class UnityRewardedVideo extends BaseAd {
     private Activity mLauncherActivity;
 
     private int impressionOrdinal;
-    private int missedImpressionOrdinal;
 
     @Override
     @NonNull
