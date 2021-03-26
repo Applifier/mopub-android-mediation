@@ -109,7 +109,7 @@ public class UnityRewardedVideo extends BaseAd {
     protected void load(@NonNull final Context context, @NonNull final AdData adData) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(adData);
-        
+
         setAutomaticImpressionAndClickTracking(false);
 
         UnityAds.load(UnityRouter.placementIdForServerExtras(adData.getExtras(), ""), mUnityLoadListener);

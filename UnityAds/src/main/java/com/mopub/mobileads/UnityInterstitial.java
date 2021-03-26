@@ -33,7 +33,7 @@ public class UnityInterstitial extends BaseAd {
     private static final String ADAPTER_NAME = UnityInterstitial.class.getSimpleName();
 
     private Context mContext;
-    private String mPlacementId = null;
+    private String mPlacementId;
     private int impressionOrdinal;
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
