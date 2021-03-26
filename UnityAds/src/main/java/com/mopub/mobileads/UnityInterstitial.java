@@ -33,9 +33,8 @@ public class UnityInterstitial extends BaseAd {
     private static final String ADAPTER_NAME = UnityInterstitial.class.getSimpleName();
 
     private Context mContext;
-    private String mPlacementId = "video";
+    private String mPlacementId;
     private int impressionOrdinal;
-    private int missedImpressionOrdinal;
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
 
@@ -49,7 +48,6 @@ public class UnityInterstitial extends BaseAd {
         Preconditions.checkNotNull(adData);
 
         final Map<String, String> extras = adData.getExtras();
-        mPlacementId = UnityRouter.placementIdForServerExtras(extras, mPlacementId);
         mContext = context;
 
         setAutomaticImpressionAndClickTracking(false);
@@ -81,7 +79,7 @@ public class UnityInterstitial extends BaseAd {
 
         MoPubLog.log(getAdNetworkId(), LOAD_ATTEMPTED, ADAPTER_NAME);
 
-        UnityAds.load(mPlacementId, mUnityLoadListener);
+        UnityAds.load(UnityRouter.placementIdForServerExtras(extras, ""), mUnityLoadListener);
         mUnityAdsAdapterConfiguration.setCachedInitializationParameters(context, extras);
     }
 
@@ -91,6 +89,7 @@ public class UnityInterstitial extends BaseAd {
     private IUnityAdsLoadListener mUnityLoadListener = new IUnityAdsLoadListener() {
         @Override
         public void onUnityAdsAdLoaded(String placementId) {
+            mPlacementId = placementId;
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial successfully loaded for placementId " + placementId);
             MoPubLog.log(LOAD_SUCCESS, ADAPTER_NAME);
 
@@ -101,6 +100,7 @@ public class UnityInterstitial extends BaseAd {
 
         @Override
         public void onUnityAdsFailedToLoad(String placementId, UnityAdsLoadError error, String message) {
+            mPlacementId = placementId;
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial failed to load for placement " +
                 placementId + ", with error message: " + message);
             MoPubLog.log(LOAD_FAILED, ADAPTER_NAME, MoPubErrorCode.NETWORK_NO_FILL.getIntCode(), MoPubErrorCode.NETWORK_NO_FILL);
@@ -128,28 +128,15 @@ public class UnityInterstitial extends BaseAd {
             return;
         }
 
-        if (UnityAds.isReady(mPlacementId)) {
-            // Lets Unity Ads know when ads succeeds to show
-            MediationMetaData metadata = new MediationMetaData(mContext);
-            metadata.setOrdinal(++impressionOrdinal);
-            metadata.commit();
-
-            UnityAds.show((Activity) mContext, mPlacementId, mUnityShowListener);
-        } else {
-            // Lets Unity Ads know when ads fail to show
-            MediationMetaData metadata = new MediationMetaData(mContext);
-            metadata.setMissedImpressionOrdinal(++missedImpressionOrdinal);
-            metadata.commit();
-
-            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Attempted to show Unity interstitial before it was available.");
-            MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
-                    MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
-                    MoPubErrorCode.NETWORK_NO_FILL);
-
-            if (mInteractionListener != null) {
-                mInteractionListener.onAdFailed(MoPubErrorCode.NETWORK_NO_FILL);
-            }
+        if (mPlacementId == null) {
+            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity Ads received call to show before successfully loading an ad");
         }
+
+        MediationMetaData metadata = new MediationMetaData(mContext);
+        metadata.setOrdinal(++impressionOrdinal);
+        metadata.commit();
+
+        UnityAds.show((Activity) mContext, mPlacementId, mUnityShowListener);
     }
 
     /**
