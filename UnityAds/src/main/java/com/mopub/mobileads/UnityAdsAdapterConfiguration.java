@@ -4,6 +4,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.mopub.common.BaseAdapterConfiguration;
 import com.mopub.common.OnNetworkInitializationFinishedListener;
@@ -60,6 +61,8 @@ public class UnityAdsAdapterConfiguration extends BaseAdapterConfiguration {
     public void initializeNetwork(@NonNull final Context context, @Nullable final Map<String, String> configuration, @NonNull final OnNetworkInitializationFinishedListener listener) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(listener);
+
+
 
         synchronized (UnityAdsAdapterConfiguration.class) {
             try {

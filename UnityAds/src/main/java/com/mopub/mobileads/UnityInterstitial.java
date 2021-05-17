@@ -115,7 +115,7 @@ public class UnityInterstitial extends BaseAd implements IUnityAdsExtendedListen
         }
 
         @Override
-        public void onUnityAdsFailedToLoad(String placementId) {
+        public void onUnityAdsFailedToLoad(String placementId, UnityAds.UnityAdsLoadError error, String message) {
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity interstitial failed to load for placement " + placementId);
             MoPubLog.log(LOAD_FAILED, ADAPTER_NAME, MoPubErrorCode.NETWORK_NO_FILL.getIntCode(), MoPubErrorCode.NETWORK_NO_FILL);
 
