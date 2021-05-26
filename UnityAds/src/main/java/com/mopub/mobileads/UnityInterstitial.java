@@ -41,7 +41,6 @@ public class UnityInterstitial extends BaseAd {
     private String mPlacementId = "video";
     private String mObjectId;
     private int impressionOrdinal;
-    private int missedImpressionOrdinal;
 
     @NonNull
     private UnityAdsAdapterConfiguration mUnityAdsAdapterConfiguration;
@@ -149,33 +148,17 @@ public class UnityInterstitial extends BaseAd {
         if (mPlacementId == null) {
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity Ads received call to show before successfully loading an ad");
         }
-        if (UnityAds.isReady(mPlacementId)) {
-            // Lets Unity Ads know when ads succeeds to show
-            MediationMetaData metadata = new MediationMetaData(mContext);
-            metadata.setOrdinal(++impressionOrdinal);
-            metadata.commit();
 
-            if (mObjectId != null) {
-                UnityAdsShowOptions showOptions = new UnityAdsShowOptions();
-                showOptions.setObjectId(mObjectId);
-                UnityAds.show((Activity) mContext, mPlacementId, showOptions, mUnityShowListener);
-            } else {
-                UnityAds.show((Activity) mContext, mPlacementId, mUnityShowListener);
-            }
+        MediationMetaData metadata = new MediationMetaData(mContext);
+        metadata.setOrdinal(++impressionOrdinal);
+        metadata.commit();
+
+        if (mObjectId != null) {
+            UnityAdsShowOptions showOptions = new UnityAdsShowOptions();
+            showOptions.setObjectId(mObjectId);
+            UnityAds.show((Activity) mContext, mPlacementId, showOptions, mUnityShowListener);
         } else {
-            // Lets Unity Ads know when ads fail to show
-            MediationMetaData metadata = new MediationMetaData(mContext);
-            metadata.setMissedImpressionOrdinal(++missedImpressionOrdinal);
-            metadata.commit();
-
-            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Attempted to show Unity interstitial before it was available.");
-            MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
-                    MoPubErrorCode.NETWORK_NO_FILL.getIntCode(),
-                    MoPubErrorCode.NETWORK_NO_FILL);
-
-            if (mInteractionListener != null) {
-                mInteractionListener.onAdFailed(MoPubErrorCode.NETWORK_NO_FILL);
-            }
+            UnityAds.show((Activity) mContext, mPlacementId, mUnityShowListener);
         }
     }
 

@@ -49,7 +49,6 @@ public class UnityRewardedVideo extends BaseAd {
     private Activity mLauncherActivity;
 
     private int impressionOrdinal;
-    private int missedImpressionOrdinal;
 
     @Override
     @NonNull
@@ -109,20 +108,20 @@ public class UnityRewardedVideo extends BaseAd {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(adData);
 
-        final Map<String, String> extras = adData.getExtras();
-        mPlacementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), mPlacementId);
         setAutomaticImpressionAndClickTracking(false);
 
-        String markup = extras.get(DataKeys.ADM_KEY);
+        final Map<String, String> extras = adData.getExtras();
+        mPlacementId = UnityRouter.placementIdForServerExtras(adData.getExtras(), mPlacementId);
+        final String markup = extras.get(DataKeys.ADM_KEY);
 
         if (markup != null) {
             mObjectId = UUID.randomUUID().toString();
             UnityAdsLoadOptions loadOptions = new UnityAdsLoadOptions();
             loadOptions.setAdMarkup(markup);
             loadOptions.setObjectId(mObjectId);
-            UnityAds.load(UnityRouter.placementIdForServerExtras(adData.getExtras(), ""), loadOptions, mUnityLoadListener);
+            UnityAds.load(UnityRouter.placementIdForServerExtras(extras, ""), loadOptions, mUnityLoadListener);
         } else {
-            UnityAds.load(UnityRouter.placementIdForServerExtras(adData.getExtras(), ""), mUnityLoadListener);
+            UnityAds.load(UnityRouter.placementIdForServerExtras(extras, ""), mUnityLoadListener);
         }
     }
 
@@ -176,33 +175,16 @@ public class UnityRewardedVideo extends BaseAd {
             MoPubLog.log(CUSTOM, ADAPTER_NAME, "Unity Ads received call to show before successfully loading an ad");
         }
 
-        if (UnityAds.isReady(mPlacementId)) {
-            // Lets Unity Ads know when ads succeeds to show
-            MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
-            metadata.setOrdinal(++impressionOrdinal);
-            metadata.commit();
+        MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
+        metadata.setOrdinal(++impressionOrdinal);
+        metadata.commit();
 
-            if (mObjectId != null) {
-                UnityAdsShowOptions showOptions = new UnityAdsShowOptions();
-                showOptions.setObjectId(mObjectId);
-                UnityAds.show(mLauncherActivity, mPlacementId, showOptions, mUnityShowListener);
-            } else {
-                UnityAds.show(mLauncherActivity, mPlacementId, mUnityShowListener);
-            }
+        if (mObjectId != null) {
+            UnityAdsShowOptions showOptions = new UnityAdsShowOptions();
+            showOptions.setObjectId(mObjectId);
+            UnityAds.show(mLauncherActivity, mPlacementId, showOptions, mUnityShowListener);
         } else {
-            // Lets Unity Ads know when ads fail to show
-            MediationMetaData metadata = new MediationMetaData(mLauncherActivity);
-            metadata.setMissedImpressionOrdinal(++missedImpressionOrdinal);
-            metadata.commit();
-
-            MoPubLog.log(CUSTOM, ADAPTER_NAME, "Attempted to show Unity rewarded video before it was available.");
-            MoPubLog.log(SHOW_FAILED, ADAPTER_NAME,
-                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR.getIntCode(),
-                    MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-
-            if (mInteractionListener != null) {
-                mInteractionListener.onAdFailed(MoPubErrorCode.VIDEO_PLAYBACK_ERROR);
-            }
+            UnityAds.show(mLauncherActivity, mPlacementId, mUnityShowListener);
         }
     }
 
